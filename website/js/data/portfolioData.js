@@ -128,12 +128,14 @@ export const portfolioData = {
       type: "Main Project",
       date: "2024.07 - 2024.08",
       title: "SmileTogether - MSA 기반 협업 도구",
-      description: "Slack 유사 기능을 MSA 아키텍처로 구현한 실시간 협업 플랫폼입니다.",
+      description: "Slack형 협업 메신저 서비스에서 채팅·히스토리·멤버·알림 서버의 백엔드 구현과 서버 간 연동을 담당했습니다.",
       points: [
-        "WebSocket(STOMP) + Kafka 기반 실시간 채팅 및 비동기 메시지 처리 구현",
-        "Kafka Offset Lag 체크를 통한 채팅 메시정 정합성 보장 로직(KafkaLagChecker) 설계",
-        "Firebase FCM 기반 Web Push 알림 서버 구축 및 메시지 연동",
-        "Spring Cloud(Config, Discovery, Gateway) 기반 MSA 초기 세팅 및 Docker Compose 환경 구축"
+        "WebSocket/STOMP 기반 채팅 서버에서 메시지를 Kafka로 produce/consume하는 구조를 구현해 다중 채팅 서버 간 메시지 전파가 가능한 실시간 채팅 기반 마련",
+        "Kafka를 활용한 메시지 히스토리 서버를 구현하고 MongoDB Document, Repository, Consumer, 조회 API를 작성해 채팅 메시지 저장/조회 책임을 별도 서버로 분리",
+        "Kafka 비동기 저장 구조에서 메시지 조회 시점의 누락 가능성을 발견하고, partition offset lag을 확인해 최대 5회·100ms 간격으로 polling 후 DB 조회하는 방식으로 메시지 정합성 보강",
+        "채팅/히스토리 서버에서 고정된 프로필 값을 사용하던 문제를 제거하고, 서버 간 HTTP 통신과 JWT Extractor를 구현해 Space 서버로부터 실제 프로필 정보를 받아 DTO에 반영하도록 개선",
+        "Kafka 기반 알림 서버 MVP를 구현해 채팅 메시지를 consume한 뒤 FCM Web Push로 전송하는 구조를 만들고, FCM 구독 정보 저장 API와 푸시 전송 로직 구성",
+        "MSA 로컬 테스트 복잡도를 해결하기 위해 chat/history 서버 단독 및 통합 Docker Compose 환경을 분리하고, CORS·컨테이너명 기반 통신·Mongo/Kafka 환경 분리 문제를 보완"
       ],
       tags: ["Spring Boot", "Kafka", "MongoDB", "FCM", "MSA"],
       links: {
@@ -141,13 +143,58 @@ export const portfolioData = {
       },
       troubleshooting: [
         {
-          title: "분산 시스템 메시지 정합성",
-          situation: "MSA 환경에서 Kafka를 이용한 비동기 메시지 전달 시, 컨슈머의 처리 지연이나 일시적 오류로 인해 메시지가 누락되거나 정합성이 깨질 수 있는 위험이 있었습니다.",
-          target: "데이터 안정성 및 시스템 신뢰도",
-          reason: "메시지 브로커와 데이터베이스 간의 작업이 원자적으로 처리되지 않는 분산 시스템의 특성상, 오프셋 관리가 정확하지 않으면 메시지 유실 가능성이 존재했습니다.",
-          process: "Kafka Offset Lag를 폴링 방식으로 체크하는 'KafkaLagChecker' 유틸리티를 설계하고 구현했습니다. 컨슈머 그룹의 오프셋 상태를 주기적으로 모니터링하여 임계치를 넘어서는 지연을 감지하도록 했습니다.",
+          title: "WebSocket + Kafka 기반 채팅 서버 구현과 서버 간 메시지 전파 구조 설계",
+          situation: "단일 채팅 서버에서는 WebSocket으로 메시지를 전달할 수 있지만, 채팅 서버가 여러 개로 늘어날 경우 서버 간 메시지 동기화가 필요했습니다.",
+          target: "사용자 경험, 안정성, 확장성",
+          reason: "채널 기반 협업 메신저 특성 상 사용자가 보낸 메시지가 실시간으로 다른 사용자에게 전달되어야 했습니다.",
+          process: "클라이언트가 WebSocket으로 메시지를 전송하면 서버가 이를 Kafka에 produce하고, Kafka를 consume한 채팅 서버가 다시 WebSocket으로 클라이언트에게 전달하는 구조를 구성했습니다. 단위 및 통합 테스트를 작성해 연동 가능성을 검증했습니다.",
           role: "Author",
-          result: "메시지 누락 가능성을 조기에 감지할 수 있는 방어 기제를 마련하여 시스템의 정합성을 강화하고 운영 안정성을 높였습니다."
+          result: "채널 메시지를 WebSocket으로 송수신하고 Kafka를 통해 다른 채팅 서버로 전파할 수 있는 기반을 만들었습니다."
+        },
+        {
+          title: "Kafka 기반 메시지 히스토리 서버 구현과 soft delete/검색/페이징 흐름 구성",
+          situation: "실시간 채팅 메시지는 화면 전달 뿐만 아니라 이후 조회를 위해 저장되어야 했고, 특정 기간 검색, 페이징, 삭제 처리, 이모지 반응 기능이 필요했습니다.",
+          target: "데이터 정합성, 사용자 경험, 유지보수성",
+          reason: "채팅 서버와 히스토리 서버가 분리된 환경이라 실시간 전달과 저장/조회 책임을 분리하는 구조가 필요했고 물리 삭제 시 기록 추적이 어렵다는 제약이 있었습니다.",
+          process: "채팅 서버가 Kafka로 메시지를 발행하면 history-server가 이를 consume하여 MongoDB에 저장하도록 구성했습니다. 메시지 삭제는 deleted_at 기반 soft delete로 처리하고 페이징을 고려한 조회 API 기반을 마련했습니다.",
+          role: "Author",
+          result: "채팅 서버와 분리된 메시지 히스토리 서버를 구축하여 메시지 저장 및 조회 책임을 분리하고 논리 삭제와 페이징 기반을 마련했습니다."
+        },
+        {
+          title: "Kafka offset lag 확인을 통한 채팅 메시지 조회 정합성 보장",
+          situation: "사용자가 메시지를 보낸 직후 히스토리를 조회하면, 아직 consume되지 않은 메시지가 누락되어 사용자 화면에 안 보이는 문제가 발생할 수 있었습니다.",
+          target: "데이터 정합성, 안정성, 사용자 경험",
+          reason: "Kafka 기반 비동기 저장 구조에서는 producer가 메시지를 보낸 시점과 consumer가 DB에 저장한 시점 사이에 지연이 존재했습니다.",
+          process: "KafkaLagChecker를 구현해 채널에 해당하는 파티션의 latest offset과 committed offset을 비교하도록 했습니다. lag이 존재하면 최대 5회, 100ms 간격으로 polling하여 consume 완료 여부를 확인한 뒤 DB에서 메시지를 조회하도록 개선했습니다.",
+          role: "Author",
+          result: "메시지 누락 가능성을 줄이는 정합성 확인 흐름을 추가하여 조회 시점의 데이터 정합성을 보장했습니다."
+        },
+        {
+          title: "MSA 서버 간 통신을 위한 프로필 조회 API와 JWT Extractor 구현",
+          situation: "채팅/히스토리 서버에서 메시지 처리 시 사용자 프로필 정보가 필요했으나 다른 서버에 흩어져 있어 고정된 값이나 더미 데이터를 사용하는 불일치가 있었습니다.",
+          target: "데이터 정합성, 유지보수성, 서버 간 연동",
+          reason: "HTTP 요청과 STOMP 요청 양쪽 모두에서 JWT를 추출하고 여러 서버와 인증 상태를 연동해야 했습니다.",
+          process: "스페이스 서버로부터 정보를 조회하는 ExternalProfileApiClient를 작성하고, HTTP와 STOMP 헤더 양쪽에서 JWT를 추출하는 JwtExtractor를 추가했습니다. 서버 간 통신 결과를 기반으로 DTO를 반환하도록 of 메서드를 작성했습니다.",
+          role: "Author",
+          result: "서버 간 HTTP 통신을 통해 실제 프로필 정보를 받아 메시지 응답에 반영하여 고정값을 성공적으로 제거했습니다."
+        },
+        {
+          title: "FCM 기반 알림 서버 MVP 구현과 푸시 알림 구조 구성",
+          situation: "채팅 메시지 발생 시 브라우저 Web Push나 FCM을 통해 사용자에게 알림을 보내는 기능이 필요했습니다.",
+          target: "사용자 경험, 기능 확장성, 서버 분리",
+          reason: "단순 채팅 서버 내부에서 알림까지 처리하면 책임이 비대해지므로 별도 알림 서버 분리가 필요했습니다.",
+          process: "Kafka로 채팅 메시지를 consume하고 FCM API 형식에 맞춰 알림 payload를 전송하는 notification-server를 구현했습니다. 초기에는 하드코딩된 사용자에게 전송했으나 이후 Space 서버와 통신해 채널 멤버 전체에게 발송되도록 보완했습니다.",
+          role: "Author",
+          result: "Kafka 기반 알림 이벤트 소비와 FCM 푸시 전송 기반을 갖춘 알림 서버 분리 및 구축을 완료했습니다."
+        },
+        {
+          title: "Docker Compose 기반 테스트 환경 분리와 통신 문제 해결",
+          situation: "프로젝트가 여러 서버로 나뉘면서 로컬 테스트 환경 구성이 복잡해졌고 컨테이너 간 통신, CORS, 포트 충돌, DB 연결 문제가 빈번했습니다.",
+          target: "개발 생산성, 안정성, 인프라",
+          reason: "서버 전체를 띄워야 하는 경우와 특정 서버만 단독으로 테스트해야 하는 경우의 요구사항이 달랐습니다.",
+          process: "chat-server 단독, history-server 단독, 통합 실행 환경 등 Docker Compose를 분리했습니다. 컨테이너 이름 기반 서버 간 통신 설정과 Mongo/Kafka 분리를 진행했고, 코드 리뷰 과정에서 다른 팀원의 Docker 이미지 경량화를 제안했습니다.",
+          role: "Author / Reviewer",
+          result: "환경 분리를 통해 로컬 실행 재현성을 높이고, 리뷰를 통해 상대 팀원의 이미지 크기를 2GB에서 662MB로 줄이는데 기여했습니다."
         }
       ]
     },
@@ -156,32 +203,75 @@ export const portfolioData = {
       type: "Main Project",
       date: "2024.03 - 2024.06",
       title: "FaceFriend - 지능형 이미지 분석 커뮤니티",
-      description: "사용자 업로드 이미지의 프라이버시 보호를 위해 자동 마스킹 및 분석 기능을 제공하는 서비스입니다.",
+      description: "Spring Boot 기반 소셜/채팅 서비스에서 WebSocket/STOMP 채팅 기능과 채팅 응답 구조 개선을 담당했습니다.",
       points: [
-        "AOP(Aspect Oriented Programming)를 활용한 이미지 마스크 레벨 검증 로직 구현",
-        "S3 기반의 안정적인 미디어 스토리지 및 정적 자원 관리 아키텍처 설계",
-        "분석 서비스 Deserializer 및 커스텀 예외 처리를 통한 서버 안정성 강화"
+        "실시간 채팅 기능이 필요한 상황에서 ChatRoom, ChatRoomMember, ChatMessage 도메인과 Controller-Service-Repository 계층을 구성하고, WebSocket/STOMP 및 RedisSubscriber 기반 채팅 API 구현",
+        "채팅방 입장 상태와 애플리케이션 접속 상태를 Redis domain으로 관리하고, 메시지 기록을 페이지네이션 및 특정 시간 이전 조회 방식으로 개선해 채팅 이력 조회 흐름 보강",
+        "STOMP 예외가 HTTP 예외 흐름으로만 처리되어 프론트엔드가 Socket 메시지로 오류를 받지 못하는 문제를 발견하고, 예외 메시지를 WebSocket으로 전달한 뒤 서버에서도 exception을 유지하도록 개선",
+        "WebSocket 응답을 JSON 형태로 표준화하고 모든 STOMP 응답에 method 필드를 추가해 프론트엔드가 채팅 이벤트들을 구분할 수 있도록 응답 구조 개선",
+        "친밀도 기반 이미지 변화 기능이 채팅방 목록 응답에 반영되도록 ChatRoomService와 상태별 채팅방 DTO를 수정하고, ChatAop 파싱 오류 및 이미지 마스크 레벨 기준 변경 대응",
+        "채팅 기능 확장 과정에서 남은 불필요 API 및 서비스 코드를 제거하고 leftroom 로직을 수정해 채팅 도메인의 유지보수성 개선"
       ],
       tags: ["Java", "Spring Boot", "Spring AOP", "AWS S3", "MySQL"],
       links: {
         github: "https://github.com/kookmin-sw/capstone-2024-18"
-      }
-    },
-    {
-      id: "spring-session",
-      type: "Open Source",
-      date: "2024.05",
-      title: "Spring Session Open Source Contribution",
-      description: "Spring 프로젝트의 생태계 확장을 위해 커뮤니티 익스텐션 정보를 문서화하여 기여했습니다.",
-      points: [
-        "Spring Session 공식 문서 내 MongoDB, Hazelcast 익스텐션 정보 업데이트(PR 기여)",
-        "공식 이슈(gh-3604)를 연관하여 오픈소스 문서 정확성 개선 참여",
-        "글로벌 오픈소스 프로젝트의 기여 프로세스(PR, CLA 등) 경험"
-      ],
-      tags: ["Open Source", "Documentation", "Asciidoc", "Git"],
-      links: {
-        github: "https://github.com/spring-projects/spring-session/pull/3630"
-      }
+      },
+      troubleshooting: [
+        {
+          title: "WebSocket/STOMP 기반 실시간 채팅 API 구현",
+          situation: "사용자 간 채팅 요청, 수락/거절, 메시지 전송 및 채팅방 목록 조회가 필요했습니다.",
+          target: "사용자 경험, 안정성, 기능 구현",
+          reason: "단순 HTTP API만으로는 실시간 메시지 전달과 채팅 상태 반영이 어려웠습니다.",
+          process: "WebSocket/STOMP 기반 채팅 API를 구현하고, ChatRoom, ChatRoomMember, ChatMessage 도메인과 계층 구조를 설계했습니다. STOMP 메시지 처리를 위해 Redis 설정과 RedisSubscriber를 추가하고 후속 리뷰에 맞춰 브로커와 DTO 구조를 리팩토링했습니다.",
+          role: "Author",
+          result: "실시간 채팅 기능 기반을 완벽하게 구현하고 도메인과 서비스 계층을 구성했습니다."
+        },
+        {
+          title: "채팅방 입장 상태와 메시지 기록 페이지네이션 관리",
+          situation: "사용자가 현재 어떤 채팅방에 있는지, 접속 중인지 관리해야 했으며, 한 번에 모든 메시지를 내리면 데이터가 커지는 문제가 있었습니다.",
+          target: "사용자 경험, 성능, 안정성",
+          reason: "채팅 기록과 접속 상태를 빠르게 처리하고 프론트엔드의 이전 메시지 조회 요구사항을 맞춰야 했습니다.",
+          process: "ChatRoomInfo, SocketInfo Redis domain과 Repository를 추가해 상태를 관리하고, 메시지 기록을 페이지네이션 구조로 변경했습니다. 프론트에서 전달한 시간 이전의 메시지를 조회할 수 있도록 MessageListRequest를 추가했습니다.",
+          role: "Author",
+          result: "실시간 채팅뿐 아니라 채팅방 입장 상태 관리와 효율적인 채팅 이력 조회 흐름을 함께 보강했습니다."
+        },
+        {
+          title: "STOMP 예외를 프론트엔드가 받을 수 있도록 WebSocket 응답 흐름 개선",
+          situation: "STOMP 통신 중 예외가 발생하면 서버에서는 확인이 가능하나, 프론트엔드는 WebSocket 메시지로 오류 정보를 받지 못했습니다.",
+          target: "안정성, 사용자 경험, 디버깅/개발 생산성",
+          reason: "일반적인 예외 처리는 HTTP 응답으로 처리되기 때문에 STOMP 클라이언트가 오류를 즉시 전달받기 어려웠습니다.",
+          process: "예외 발생 시 프론트로 오류 메시지를 먼저 STOMP로 전송하고, 이후 서버에서도 확인할 수 있도록 exception을 유지하는 방식으로 MessageService를 리팩토링했습니다.",
+          role: "Author",
+          result: "채팅 중 실패 상황을 프론트가 즉시 인지할 수 있게 하고, 서버 디버깅 흐름도 함께 보존했습니다."
+        },
+        {
+          title: "WebSocket 응답을 JSON 형태와 method 필드 기반으로 표준화",
+          situation: "채팅방 나가기, 요청 수락, 메시지 전송 등 여러 이벤트가 동일한 WebSocket 채널로 전달되면서 프론트엔드가 이벤트를 판별하기 어려웠습니다.",
+          target: "프론트엔드 연동성, 유지보수성, 사용자 경험",
+          reason: "전달되는 응답 형식이 단순 문자열이거나 규칙이 일정하지 않아 타입 구분이 필요했습니다.",
+          process: "WebSocket response를 JSON 형태로 변경하고, 모든 STOMP 응답 DTO에 method 필드를 추가했습니다. 채팅방 나가기와 요청 수락 결과도 상대방이 WebSocket으로 받을 수 있도록 응답 구조를 수정했습니다.",
+          role: "Author",
+          result: "프론트엔드가 이벤트 타입을 명확히 구분하고 사용자 화면에 즉시 반영할 수 있는 표준 응답 구조를 만들었습니다."
+        },
+        {
+          title: "채팅방 목록에서 친밀도 레벨에 맞는 상대방 이미지 응답 처리",
+          situation: "채팅방 목록에서도 친밀도에 따라 변화하는 상대방 이미지를 보여줘야 했으나 응답에 레벨별 이미지가 반영되지 못했습니다.",
+          target: "사용자 경험, API 응답 정확성",
+          reason: "AOP 파라미터 파싱 오류 및 기존 응답 DTO의 한계가 있었습니다.",
+          process: "채팅방 목록 응답에 현재 레벨에 맞는 이미지가 반영되도록 ChatRoomService와 DTO를 수정했습니다. ChatAop에서 JoinPoint 파라미터를 파싱하는 오류를 해결하고 이후 레벨 기준 변경에 맞춰 AOP 로직을 리팩토링했습니다.",
+          role: "Author",
+          result: "AOP 파싱 오류를 수정하고 친밀도 기반 이미지 응답 연동의 정확성을 개선했습니다."
+        },
+        {
+          title: "채팅 API 불필요 코드 정리와 leftroom 로직 수정",
+          situation: "채팅 기능이 여러 번 수정되면서 사용하지 않는 enter/exit API, ObjectMapper 코드, 불필요 조건문 등이 남게 되었습니다.",
+          target: "유지보수성, 개발 생산성, 안정성",
+          reason: "죽은 코드가 남아 있으면 프론트엔드 API 계약에 혼란을 주고 유지보수 비용을 증가시켰습니다.",
+          process: "사용하지 않는 enter/exit API와 서비스 코드, RedisSubscriber의 불필요 코드를 모두 제거했습니다. 채팅방 나가기(leftroom) 로직을 수정해 실제 사용 흐름을 중심으로 정리했습니다.",
+          role: "Author",
+          result: "불필요 코드를 제거하고 채팅방 나가기 흐름을 정리하여 유지보수성을 크게 높였습니다."
+        }
+      ]
     },
     {
       id: "oneHabit ",
@@ -248,22 +338,6 @@ export const portfolioData = {
       ]
     },
     {
-      id: "kiki-kiosk",
-      type: "OOP Project",
-      date: "2024.01",
-      title: "Kiki Kiosk - 객체지향 기반 키오스크 시스템",
-      description: "객체지향 설계 원칙을 준수하여 확장성과 유지보수성이 높은 키오스크 백엔드 API를 개발한 프로젝트입니다.",
-      points: [
-        "관심사 분리를 위한 Controller-Service-Repository 레이어 아키텍처 적용",
-        "CORS 설정 및 공통 예외 처리를 통한 프론트엔드-백엔드 연동 안정성 확보",
-        "빌드 및 배포 설정(yml) 최적화로 개발 환경과 운영 환경 분리 관리"
-      ],
-      tags: ["Java", "Spring Boot", "OOP", "MySQL", "CORS"],
-      links: {
-        github: "https://github.com/godeka/kiki_kiosk"
-      }
-    },
-    {
       id: "relanz",
       type: "Django Project",
       date: "2023.06 - 2023.07",
@@ -326,6 +400,218 @@ export const portfolioData = {
           result: "콘텐츠 화면의 표시 오류를 근본적으로 해결하고, 개발 및 배포 환경의 데이터베이스 일관성을 확보했습니다."
         }
       ]
+    }
+  ],
+  learning: [
+    {
+      type: "Personal Project",
+      date: "2026.03",
+      title: "Java GC Puzzle",
+      description: "바이브 코딩 기반으로 Java GC를 퍼즐 게임 형태로 학습할 수 있는 웹 사이트 제작",
+      points: [
+        "Java GC 개념을 이해하기 위해 인터랙티브 학습 사이트를 직접 제작하며, 자바 메모리 구조와 가비지 컬렉션 동작 원리를 탐구했습니다.",
+        "학습용 웹 애플리케이션을 구현하며 개념 이해를 위한 도구를 직접 만들고 실험하는 방식으로 학습을 진행했습니다.",
+        "자바 메모리 구조, 객체 생명주기, GC 동작 흐름을 시각적으로 정리하며 추상적인 개념을 구현과 연결해 이해하는 경험을 쌓았습니다.",
+        "단순 이론 학습에 그치지 않고, 학습용 프로토타입을 제작해 개념을 검증하고 구조화하는 방식으로 CS 지식을 학습했습니다."
+      ],
+      tags: ["Java GC", "Antigravity", "Web", "1인 개발"],
+      links: {
+        website: "http://java-memory-quiz.s3-website.ap-northeast-2.amazonaws.com/"
+      }
+    },
+    {
+      type: "University Project",
+      date: "2024.03 - 2024.06",
+      title: "KiKi Kiosk - 객체지향 기반 키오스크 시스템",
+      description: "키오스크 주문에 어려움을 느끼는 정보 취약계층(ex.노년층)을 위해 주문 단계를 하나씩 나눠 점원과 대화하듯 주문할 수 있는 서비스로, 객체지향 설계 원칙을 준수하여 확장성과 유지보수성이 높은 백엔드 API를 개발했습니다.",
+      points: [
+        "객체지향분석 및 설계 강의를 통해 학습한 내용을 바탕으로 도메인 모델 설계부터 시퀀스/클래스 다이어그램까지 전체 소프트웨어 설계 프로세스를 실습했습니다.",
+        "Use Case / 시퀀스 / 시스템 시퀀스 / 클래스 다이어그램 작성을 통해 기능 요구사항 분석 및 시스템 구조를 설계했습니다.",
+        "관리자 로그인/로그아웃 기능을 구현하고, GRASP 원칙 및 디자인 패턴(Controller, Creator, Expert, Singleton, DTO 등)을 적용하여 비즈니스 로직 분리 및 유지보수 용이성을 향상시켰습니다.",
+        "관심사 분리를 위한 Controller-Service-Repository 레이어 아키텍처를 적용했습니다.",
+        "WebMvcConfigurer를 통한 글로벌 CORS 정책 설정 및 @RestControllerAdvice를 통한 애플리케이션 전역 예외 처리 규격 통일을 구현하여 프론트엔드-백엔드 연동 안정성을 확보했습니다.",
+        "빌드 및 배포 설정(yml) 최적화로 개발 환경과 운영 환경 분리 관리를 적용했습니다."
+      ],
+      tags: ["OOP", "Design Pattern", "Java", "Spring Boot", "MySQL", "CORS"],
+      links: {
+        github: "https://github.com/imjanghyeok/kiki_kiosk"
+      }
+    }
+  ],
+  activities: [
+    {
+      id: "opensource_contribution",
+      title: "오픈소스 기여 활동 | 오픈소스 기여 모임 10기",
+      date: "2026.01 - 2026.02",
+      description: "오픈소스 기여 모임 10기에 참여하여 실제 오픈소스 프로젝트의 협업 방식과 기여 프로세스를 경험하고, Spring Session 공식 문서 업데이트 PR을 제출했습니다.",
+      details: [
+        "GitHub 기반 오픈소스 협업 프로세스 및 PR(Pull Request) workflow 경험",
+        "AI 기반 개발 도구(ChatGPT, GitHub Copilot 등)를 활용한 코드 분석 및 이슈 해결 시도",
+        "실제 OSS 프로젝트 코드 리딩 및 기능 개선 PR 제출 경험",
+        "코드 리뷰 피드백 기반 수정 및 협업 커뮤니케이션 경험",
+        "[Spring Session 공식 문서 내 MongoDB, Hazelcast 익스텐션 정보 업데이트(PR 기여)](https://github.com/spring-projects/spring-session/pull/3630)",
+        "공식 이슈(gh-3604)를 연관하여 오픈소스 문서 정확성 개선 참여"
+      ],
+      story: `
+        <h3>오픈소스 기여 활동 (오픈소스 기여 모임 10기)</h3>
+        <br>
+        <p>오픈소스 기여 모임 활동을 통해 실제 오픈소스 프로젝트의 협업 방식과 기여 프로세스를 경험했습니다. 단순 코드 작성보다 프로젝트 구조를 이해하고, 기존 코드 스타일 및 유지보수 방향에 맞춰 개선점을 찾는 과정에 집중했습니다.</p>
+        <br>
+        <p>특히 GitHub 기반 협업 환경에서 이슈 탐색, 로컬 개발 환경 세팅, 코드 리딩, 브랜치 전략, Pull Request 작성 및 리뷰 대응 과정을 직접 경험했습니다.</p>
+        <br>
+        <p>또한 ChatGPT, GitHub Copilot 등의 AI 기반 개발 도구를 활용하여 코드베이스 구조를 빠르게 파악하고, 관련 문서 및 에러 원인을 분석하며 문제 해결 방향을 도출했습니다. 이를 통해 단순 구현뿐 아니라 AI를 활용한 개발 생산성 향상 경험도 함께 쌓을 수 있었습니다.</p>
+        <br>
+        <p>프로젝트 기여 과정에서는 기능 개선 및 수정 사항에 대한 PR(Pull Request)을 제출하였고, Maintainer의 리뷰 피드백을 반영하며 협업 커뮤니케이션 경험을 쌓았습니다.</p>
+        <br>
+        <h4>Spring Session 기여 중 트러블 슈팅</h4>
+        <p><strong>상황:</strong> Spring Session 공식 저장소에 PR을 제출하는 과정에서, CLA 서명 누락 및 커밋 메시지 규약(Conventions)을 준수하지 않아 CI 빌드에 실패했습니다.</p>
+        <p><strong>해결:</strong> Spring 프로젝트의 기여 가이드라인(CONTRIBUTING.adoc)을 다시 숙지하고, CLA 서명을 완료한 뒤 커밋 메시지를 'gh-3604'와 같이 이슈 번호를 포함하는 올바른 형식으로 리베이스(Rebase)했습니다.</p>
+        <p><strong>결과:</strong> 글로벌 표준에 맞는 협업 프로세스를 경험하고, 성공적으로 PR이 Merge되어 오픈소스 기여를 완수했습니다.</p>
+      `
+    },
+    {
+      id: "woowacourse",
+      title: "우아한테크코스 6기 프리코스",
+      date: "2024.10 - 2024.11",
+      description: "Java 기반 콘솔 애플리케이션 3개를 구현하며 요구사항 분석, 객체지향 설계, 테스트, 코드 리뷰를 반복 학습했습니다.",
+      details: [
+        "자바 기반의 우아한테크코스 6기 프리코스 참여",
+        "문자열 덧셈 계산기: 파싱, 검증, 계산 책임을 개별 객체로 분리하여 입력 처리 흐름 명확화",
+        "자동차 경주: 랜덤 숫자 생성 로직을 전략 패턴(IntGeneratorStrategy)으로 분리하여 테스트 가능한 구조로 개선",
+        "로또 미션: 도메인 객체(Issuer, Checker, Analyst 등)를 세분화하여 비즈니스 로직 분산 방지",
+        "1~3주차 과제 PR 리뷰 참여 (reviewer 32회, commenter 59회)로 DTO, MVC 역할, 인터페이스 추상화 관련 토론 경험",
+        "4주차 과제 private 진행 및 미션 수행"
+      ],
+      story: `
+        <h3>우아한테크코스 6기 프리코스</h3>
+        <br>
+        <p>우아한테크코스 프리코스에서 Java 기반 콘솔 애플리케이션 3개를 구현하며 요구사항 분석, 객체지향 설계, 테스트, 코드 리뷰를 반복했습니다.</p>
+        <br>
+        <p><strong>[문자열 덧셈 계산기]</strong> 구분자 파싱, 숫자 파싱, 입력 검증, 계산 책임을 SeparatorParser, NumberParser, Validator, Calculator로 분리해 입력 처리 흐름을 명확히 했습니다.</p>
+        <br>
+        <p><strong>[자동차 경주]</strong> 랜덤 값에 의존하는 이동 로직을 테스트 가능하게 만들기 위해 IntGeneratorStrategy를 도입하고, 자동차·자동차 목록·경주 상태를 각각 Car, Cars, Racing 객체로 분리했습니다.</p>
+        <br>
+        <p><strong>[로또 미션]</strong> 로또 발행, 당첨 결과 계산, 수익률 계산을 Issuer, Checker, LottoResults, Analyst 등 도메인 객체로 나누어 Controller에 비즈니스 로직이 집중되지 않도록 설계했습니다.</p>
+        <br>
+        <p><strong>[코드 리뷰 활동]</strong> 1~3주차 미션 과정에서 다른 참가자들의 PR에 reviewer 32회, commenter 59회로 참여했습니다. DTO의 책임, View/Controller의 역할 분리, 전략 패턴의 필요성, 인터페이스 추상화, 네이밍, 테스트 가능성에 대해 깊이 있는 리뷰를 주고받으며 설계 관점을 넓혔습니다.</p>
+      `
+    },
+    {
+      id: "boostcamp10",
+      title: "네이버 부스트캠프 웹·모바일 10기 챌린지 및 멤버십 수료",
+      date: "2025.07 - 2026.02",
+      description: "매주 새로운 팀원들과 협업하며 CS 기초 지식을 학습하고, 웹 애플리케이션의 요구사항 분석부터 배포까지 전 과정을 경험하며 개발 흐름 전반에 대한 이해를 넓혔습니다.",
+      details: [
+        "네이버 부스트캠프 챌린지 과정 수료 (2025.07 - 2025.08)",
+        "네이버 부스트캠프 멤버십 과정 수료 (2025.08 - 2026.02)",
+        "하루 단위 미션을 수행하며 우선순위 설정, 일정 관리, 학습과 구현의 균형을 맞추는 자기주도적 개발 사이클 체득",
+        "프론트엔드와 백엔드를 모두 다루며 상태 관리, API 연동, 인증, 예외 처리, 데이터 모델링 등 핵심 개발 역량 강화",
+        "성능, 동시성, 데이터 정합성, 운영 환경 구성을 고민하며 안정적으로 동작하는 서비스를 설계하는 관점 확대",
+        "문서화, 테스트, 코드 리뷰, 리팩토링을 반복하며 협업 기반의 개발 습관 형성"
+      ],
+      story: `
+        <h3>네이버 부스트캠프 10기</h3>
+        <br>
+        <p>부스트캠프 웹・모바일 10기 챌린지 과정에 참여해, 매일 제한된 시간 안에 주어지는 미션을 분석·구현·회고하는 방식으로 문제 해결 역량을 훈련했습니다.</p>
+        <br>
+        <p>미션 세부 내용은 공개할 수 없지만, 핵심은 촉박한 시간 내 우선순위를 세워 해결책을 만들고, 동료 피드백을 통해 접근 방식과 코드 품질을 반복적으로 개선하는 과정이었습니다.</p>
+        <br>
+        <p>이 경험을 통해 불확실한 조건에서도 빠르게 문제를 구조화하고, 검증과 리팩토링까지 포함한 문제 해결 역량을 키울 수 있었습니다.</p>
+      `
+    },
+    {
+      id: "smilegate_camp",
+      title: "Smilegate Online Dev Camp",
+      date: "2025.01 - 2025.03",
+      description: "SmileTogether 프로젝트의 백엔드 팀장이자 리드 개발자로서 전체 시스템 방향성 설정과 아키텍처 설계를 이끌었습니다.",
+      details: [],
+      story: `
+        <h3>Project lead - Backend</h3>
+        <br>
+        <p>‘SmileTogether’ 프로젝트는 단순한 개발을 넘어, 팀을 이끄는 리더로서의 첫 경험이었습니다.</p>
+        <br>
+        <p>오프라인 데브캠프에 탈락한 아쉬움 속에서, 온라인 프로젝트 참여 기회를 통해 저는 팀장 겸 백엔드 개발자로 새롭게 도전하게 되었습니다.</p>
+        <br>
+        <p>프로젝트 초기에 가장 먼저 주력한 일은 팀 전체의 방향을 잡는 일이었습니다. 단순한 채팅 기능 구현이 아닌, 대규모 트래픽에도 버틸 수 있는 실시간 통신 시스템이라는 목표를 세우고, 이를 모든 팀원이 이해하고 함께 도전할 수 있도록 비전을 공유했습니다.</p>
+      `
+    },
+    {
+      id: "dan25",
+      title: "네이버 DAN 25 컨퍼런스 참여",
+      date: "2025.11.07",
+      description: "데이터와 지표를 바탕으로 문제를 정의하고 개선 방향을 설계하는 실무적 사고방식을 배웠습니다.",
+      details: [
+        "현재 성과를 진단한 뒤 다음 목표를 설정하는 회고와 성장 방향 수립의 중요성 체감",
+        "기술을 사용자 경험과 연결해 바라보는 관점 확대"
+      ],
+      links: { blog: "https://dlaljh.tistory.com/4" }
+    },
+    {
+      id: "likelion",
+      title: "웹 개발 및 IT 창업 동아리 [멋쟁이사자처럼] 국민대",
+      date: "2023.03 - 2025",
+      description: "동아리 대표(2024) 및 중앙운영단으로 활동하며 세션 커리큘럼 총괄, 해커톤 기획 및 운영, 백엔드 세션 진행 등을 수행했습니다.",
+      details: [
+        "국민대 멋쟁이사자처럼 교내 해커톤 및 전국 멋쟁이사자처럼 중앙 해커톤 참여 (2023)",
+        "40여 명 규모의 동아리인 국민대 멋쟁이사자처럼 대표 역임 (2024)",
+        "동아리 연합 해커톤 (트렌디톤, 4호선톤) 중앙운영단 참여 및 운영 보조 (2024)",
+        "백엔드 세션 커리큘럼 보완 및 Django, AWS 배포 세션 진행 (2024-2025)",
+        "[Django user, admin 세션 진행 영상](https://www.youtube.com/watch?v=rW0X2DvXyL4)",
+        "[MTV 패턴 세션 자료](https://drive.google.com/file/d/1DXrul0RN32W26vuRbG3y9HVz53IAMeMu/view?usp=drive_link)",
+        "[AWS 배포 세션 자료](https://drive.google.com/file/d/1CGhMX5EuxRJy8iDvh5osVBsf97e7-0kq/view?usp=drive_link)"
+      ],
+      story: `
+        <h3>멋쟁이사자처럼 국민대 대표 및 운영</h3>
+        <br>
+        <p>2023년 비전공자로 개발을 시작하기 위해 멋쟁이사자처럼이라는 동아리에 들어갔습니다. 신입 부원으로서 1학기 동안 주 2회, 회당 2시간 이상의 세션을 들으면서 파이썬 기반의 Django 프레임워크에 대해 배웠습니다. 이런 학습 활동을 바탕으로 교내 해커톤과 중앙 해커톤 등 두 번의 해커톤에 참가하였습니다.</p>
+        <br>
+        <p>동아리에 대한 적극적인 활동을 인정받아 2024년 동아리 대표로서 활동하게 되었습니다. 동아리 부원은 총 40여 명 규모였고, 신입 부원 당시 세션을 들을 때 아쉬웠던 REST API에 대한 세션을 첨가하여 세션 커리큘럼을 보완하였습니다.</p>
+        <br>
+        <p>또한 1월에는 멋쟁이사자처럼 운영진톤의 중앙 운영단으로 참가하였고, 이후 중앙 해커톤 참여, 교내 해커톤 기획 및 운영 등을 하였습니다. 대표로서 마지막으로 11월에 동국대 주최의 연합 해커톤인 4호선톤의 중앙 운영단으로 참여하여 해커톤 운영을 도왔습니다.</p>
+        <br>
+        <p>비전공자로 시작해 막막했던 개발자 길에서 다양한 사람들과 네트워크를 형성하고, 개발을 잘하는 사람, 개발을 처음 접하는 사람, 협업을 잘 하는 사람 등 여러 사람들을 만나고 배울 수 있었던 뜻깊은 활동이었습니다.</p>
+      `
+    },
+    {
+      id: "goormthon",
+      title: "Goormthon Univ 2기 벚꽃톤",
+      date: "2024.02 - 2024.08",
+      description: "약 300명 규모의 구름톤 유니브 주최 벚꽃톤에 참여하여 기획부터 백엔드 개발까지 협업 기반 프로젝트를 경험했습니다.",
+      details: [
+        "습관 형성 서비스 OneHabit의 기획 및 백엔드 개발 담당"
+      ],
+      story: `
+        <h3>벚꽃톤 해커톤 참여 경험</h3>
+        <br>
+        <p>Goormthon Univ 2기 활동을 통해 약 300명이 참여한 벚꽃톤 해커톤에 참가하며 협업 기반 프로젝트 경험을 쌓았습니다. 이 과정에서 저는 습관 형성에 어려움을 겪는 대학생과 직장인을 위한 서비스 OneHabit의 기획과 백엔드 개발을 맡았습니다.</p>
+        <br>
+        <p>예상보다 빠듯한 일정과 역할 분담의 미비뿐만 아니라, 기획자가 제안한 아이디어가 외부 서비스의 표절이라는 사실이 밝혀지는 돌발 상황도 있었습니다.</p>
+        <br>
+        <p>이 경험을 통해 단순한 개발을 넘어, 기획과 기술이 연결되는 지점에서의 실행력과 문제 해결력, 그리고 진정한 협업의 본질을 깊이 배우는 계기가 되었습니다.</p>
+      `
+    }
+  ],
+  papers: [
+    {
+      title: "애플리케이션 내 토큰 관리를 통해 사용자 개인정보 보안",
+      publisher: "한국정보과학회 학술발표논문집, 제주",
+      date: "2024.06.26",
+      authors: "김유림, 임장혁, 김우림, 서의정, 신은영, 최유찬",
+      details: [
+        "모바일 환경의 앱 애플리케이션 내에서 JWT 토큰 관리를 통한 사용자 개인정보에 대한 보안",
+        "재난 애플리케이션이라는 특징을 고려한 JWT 토큰 발급 및 재발급 과정 저술",
+        "토큰 기반 시스템의 백엔드 서버 구현"
+      ]
+    }
+  ],
+  awards: [
+    {
+      title: "멋쟁이사자처럼 X 국민대 해커톤 금상 수상",
+      date: "2023"
+    },
+    {
+      title: "2024 한국컴퓨터종합학술대회 학부생/주니어 논문경진대회 장려상",
+      date: "2024"
     }
   ]
 };
