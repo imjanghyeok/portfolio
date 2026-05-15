@@ -3,14 +3,15 @@ export const portfolioData = {
     name: "임장혁",
     role: "Backend Developer",
     eyebrow: "Backend Developer Portfolio",
-    headline: "설명할 수 있는 코드를 작성하는 백엔드 개발자",
+    headline: "문제를 기능이 아닌 시스템 관점에서 해결하는 백엔드 개발자",
     description: "비전공자로 개발을 시작했지만, 꾸준한 학습과 실전을 통해 개발자로 성장해 왔습니다. 다양한 프로젝트와 동아리 활동을 통해 자기주도라는 것은 단순히 혼자 앞서 나가는 것이 아니라, 스스로 팀에 기여할 수 있는 지점을 찾아내고 실천하는 것임을 배웠습니다.",
     status: "Backend Developer Portfolio",
     focus: "Java(Spring · Spring Boot) · javascript/typescript(node.js · nest.js) · LLM",
     github: "imjanghyeok",
     email: "qkdrhkgn23@naver.com",
     blog: "https://dlaljh.tistory.com/",
-    resumeUrl: "../assets/resume.pdf"
+    resumeUrl: "./assets/resume.pdf",
+    portfolioUrl: "./assets/portfolio.pdf"
   },
   about: {
     title: "AI가 작성한 코드를 검증할 수 있는 개발자를 지향합니다.",
@@ -463,10 +464,6 @@ export const portfolioData = {
         <br>
         <p>프로젝트 기여 과정에서는 기능 개선 및 수정 사항에 대한 PR(Pull Request)을 제출하였고, Maintainer의 리뷰 피드백을 반영하며 협업 커뮤니케이션 경험을 쌓았습니다.</p>
         <br>
-        <h4>Spring Session 기여 중 트러블 슈팅</h4>
-        <p><strong>상황:</strong> Spring Session 공식 저장소에 PR을 제출하는 과정에서, CLA 서명 누락 및 커밋 메시지 규약(Conventions)을 준수하지 않아 CI 빌드에 실패했습니다.</p>
-        <p><strong>해결:</strong> Spring 프로젝트의 기여 가이드라인(CONTRIBUTING.adoc)을 다시 숙지하고, CLA 서명을 완료한 뒤 커밋 메시지를 'gh-3604'와 같이 이슈 번호를 포함하는 올바른 형식으로 리베이스(Rebase)했습니다.</p>
-        <p><strong>결과:</strong> 글로벌 표준에 맞는 협업 프로세스를 경험하고, 성공적으로 PR이 Merge되어 오픈소스 기여를 완수했습니다.</p>
       `
     },
     {

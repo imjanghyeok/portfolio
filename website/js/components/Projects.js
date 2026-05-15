@@ -1,16 +1,16 @@
 export function renderProjects(projects) {
   const projectsContainer = document.querySelector('#projects .container');
-  
+
   // Keep the heading
   const heading = projectsContainer.querySelector('.section-heading').outerHTML;
-  
+
   const highlightKeywords = (text) => {
     if (!text) return text;
     const keywords = ['MSA', 'Kafka', 'Redis', 'WebSocket', 'STOMP', 'AOP', 'SSE', 'JWT', 'NCP', 'Docker', 'CI/CD', 'GitHub Actions', 'Spring Data JPA', 'MySQL', 'WebRTC', 'Spring Boot', 'Django', 'WebMvcConfigurer', '@RestControllerAdvice', 'RedisSubscriber', 'CQRS', 'RedisTemplate', '객체지향 설계', 'MVC', '테스트 코드', 'Controller', 'Service', 'Repository'];
-    
+
     keywords.sort((a, b) => b.length - a.length);
     const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    
+
     const regex = new RegExp(`(${keywords.map(escapeRegExp).join('|')})`, 'g');
     return text.replace(regex, '<strong class="highlight">$1</strong>');
   };
@@ -36,9 +36,9 @@ export function renderProjects(projects) {
             </div>
 
             <div class="project-links">
-              ${proj.troubleshooting && proj.troubleshooting.length > 0 
-                ? `<button class="btn btn-primary btn-trouble" data-id="${proj.id}">상세 보기</button>` 
-                : ''}
+              ${proj.troubleshooting && proj.troubleshooting.length > 0
+      ? `<button class="btn btn-primary btn-trouble" data-id="${proj.id}">상세 보기</button>`
+      : ''}
               <a href="${proj.links.github}" class="btn btn-secondary" target="_blank">GitHub</a>
             </div>
           </div>
@@ -65,8 +65,6 @@ export function renderProjects(projects) {
 
 function showTroubleshootingDetail(project) {
   const modalHtml = `
-    <h2>2. 문제 해결 경험</h2>
-    <br>
     ${project.troubleshooting.map((t, idx) => `
       <div class="trouble-item">
         <h3>경험 ${idx + 1}. ${t.title}</h3>
@@ -99,7 +97,7 @@ function showTroubleshootingDetail(project) {
 
   const modal = document.getElementById('modal');
   const modalBody = document.getElementById('modal-body');
-  
+
   if (modal && modalBody) {
     modalBody.innerHTML = modalHtml;
     modal.classList.add('active');

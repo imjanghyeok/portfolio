@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,6 +8,7 @@
   <meta name="description" content="백엔드 개발자 임장혁의 포트폴리오와 이력서 사이트입니다." />
   <link rel="stylesheet" href="./css/style.css" />
 </head>
+
 <body>
   <header class="site-header">
     <div class="container header-inner">
@@ -17,11 +19,28 @@
         <a href="#projects">Projects</a>
         <a href="#learning">Learning</a>
         <a href="#activities">Activities</a>
-        <a href="#resume">Resume</a>
+        <a href="#document">Document</a>
         <a href="#contact" class="nav-cta">Contact</a>
-        <button id="theme-toggle" class="btn-theme" aria-label="Toggle Theme" style="background:none;border:none;color:inherit;cursor:pointer;display:flex;align-items:center;padding:8px;">
-          <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-          <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <button id="theme-toggle" class="btn-theme" aria-label="Toggle Theme"
+          style="background:none;border:none;color:inherit;cursor:pointer;display:flex;align-items:center;padding:8px;">
+          <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            style="display:none">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            style="display:block">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
         </button>
       </nav>
     </div>
@@ -36,7 +55,7 @@
           <p class="hero-description"></p>
           <div class="hero-actions">
             <a href="#projects" class="btn btn-primary">프로젝트 보기</a>
-            <a href="./resume.pdf" class="btn btn-secondary">이력서 다운로드</a>
+            <a href="./assets/resume.pdf" class="btn btn-secondary" download>이력서 다운로드</a>
           </div>
         </div>
 
@@ -139,17 +158,11 @@
       </div>
     </section>
 
-    <section id="resume" class="section resume-section">
-      <div class="container resume-box">
-        <div>
-          <p class="section-label">Resume</p>
-          <h2>이력서 요약</h2>
-          <p>
-            백엔드 신입 개발자를 준비하며, AI 면접 시뮬레이션 서비스에서 서버 흐름 제어,
-            데이터 모델링, 테스트 전략, 인프라 안정성 개선을 경험했습니다.
-          </p>
-        </div>
-        <a href="./resume.pdf" class="btn btn-primary">PDF 이력서 다운로드</a>
+    <section id="document" class="section document-section">
+      <div class="container document-box">
+        <a href="./assets/resume.pdf" class="btn btn-primary" download>이력서 다운로드</a>
+        <a href="./assets/portfolio.pdf" class="btn btn-secondary" download>포트폴리오 다운로드</a>
+        <a href="./assets/coverletter.pdf" class="btn btn-secondary" download>자기소개서 다운로드</a>
       </div>
     </section>
 
@@ -183,4 +196,5 @@
 
   <script type="module" src="./js/app.js"></script>
 </body>
+
 </html>

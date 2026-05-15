@@ -7,6 +7,7 @@ export function renderContact(p) {
     <a href="mailto:${p.email}">Email</a>
     <a href="https://github.com/${p.github}">GitHub</a>
     <a href="${p.blog}">Blog</a>
-    <a href="${p.resumeUrl}">Resume</a>
+    <a href="${p.resumeUrl}" download>Resume</a>
+    <a href="${p.portfolioUrl}" download>Portfolio</a>
   `;
 }

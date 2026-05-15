@@ -100,7 +100,7 @@ img {
 }
 
 .section-heading h2,
-.resume-box h2,
+.document-box h2,
 .contact-box h2 {
   margin: 0;
   font-size: clamp(32px, 4vw, 48px);
@@ -393,7 +393,7 @@ img {
   color: var(--text-muted);
 }
 
-.project-points li + li {
+.project-points li+li {
   margin-top: 8px;
 }
 
@@ -404,7 +404,7 @@ img {
   margin-top: 28px;
 }
 
-.resume-box,
+.document-box,
 .contact-box {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -412,14 +412,15 @@ img {
   background: rgba(255, 255, 255, 0.05);
 }
 
-.resume-box {
+.document-box {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 32px;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 24px;
 }
 
-.resume-box p,
+.document-box p,
 .contact-box p {
   color: var(--text-muted);
 }
@@ -503,8 +504,15 @@ img {
 }
 
 @keyframes modal-in {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .modal-close {
@@ -547,7 +555,7 @@ img {
   color: var(--text-muted);
 }
 
-.modal-body li + li {
+.modal-body li+li {
   margin-top: 8px;
 }
 
@@ -569,9 +577,8 @@ img {
     grid-template-columns: 1fr;
   }
 
-  .resume-box {
-    flex-direction: column;
-    align-items: flex-start;
+  .document-box {
+    justify-content: center;
   }
 }
 
@@ -605,7 +612,7 @@ img {
   .skill-card,
   .problem-card,
   .project-card,
-  .resume-box,
+  .document-box,
   .contact-box {
     padding: 22px;
   }
@@ -1033,6 +1040,7 @@ img {
   .modal-content {
     padding: 32px 24px;
   }
+
   #modal-body h3 {
     font-size: 22px;
   }
@@ -1068,4 +1076,3 @@ img {
   padding: 0 4px;
   border-radius: 4px;
 }
-
