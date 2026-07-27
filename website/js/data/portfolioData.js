@@ -3,8 +3,8 @@ export const portfolioData = {
     name: "임장혁",
     role: "Backend Developer",
     eyebrow: "Backend Developer Portfolio",
-    headline: "문제를 기능이 아닌 시스템 관점에서 해결하는 백엔드 개발자",
-    description: "비전공자로 개발을 시작했지만, 꾸준한 학습과 실전을 통해 개발자로 성장해 왔습니다. 다양한 프로젝트와 동아리 활동을 통해 자기주도라는 것은 단순히 혼자 앞서 나가는 것이 아니라, 스스로 팀에 기여할 수 있는 지점을 찾아내고 실천하는 것임을 배웠습니다.",
+    headline: "실시간·비동기 시스템의 상태와 데이터 정합성을 설계하는 백엔드 개발자",
+    description: "Java/Spring과 TypeScript/NestJS를 사용해 메시지 전파, 런타임 상태, LLM 흐름처럼 실패 조건이 사용자 경험으로 이어지는 문제를 다뤄왔습니다.",
     status: "Backend Developer Portfolio",
     focus: "Java(Spring · Spring Boot) · javascript/typescript(node.js · nest.js) · LLM",
     github: "imjanghyeok",
@@ -53,17 +53,19 @@ export const portfolioData = {
     {
       id: "synapse",
       type: "Main Project",
-      date: "2025.12 - 2026.02",
+      date: "2025.01.05 ~ 2026.02.06",
       title: "Synapse(PSI) - AI 면접 시뮬레이션 서비스",
       description: "사용자의 포트폴리오를 기반으로 AI 면접관이 개인화된 질문과 피드백을 제공하는 서비스입니다.",
       points: [
-        "LLM 비결정성 제어를 위한 서버 중심 면접 흐름 설계 및 종료 결정 엔진 구축",
+        "LLM 비결정성 제어를 위한 서버 중심 면접 흐름 설계 및 종료 정책 모듈 구축",
         "TTL 기반 인메모리 구조(KeySetStore)와 Min-Heap 스케줄러를 활용한 세션 관리",
+        "Temperature 0.4~0.7을 각 100회씩 총 400회 시도(396회 성공)하고, 완전 일치 중복률과 질문 유형 분류 지표를 분리해 집계",
         "TypeORM Migration 도입 및 local/production 환경별 DB 운영 안정성 확보",
         "GitHub Actions CI 파이프라인(Lint, Build, Unit, E2E Test) 및 배포 품질 게이트 구축",
-        "Docker 기반 빌드 최적화를 통해 이미지 크기를 1.2GB에서 250MB로 경량화"
+        "NCP VPC에서 Public Subnet의 Bastion/Application 서버와 Private Subnet의 MySQL을 분리하고 ACG 기반 접근 정책 구성",
+        "Docker 기반 배포 설정과 제한된 서버 환경을 고려한 실행 구성 정리"
       ],
-      tags: ["NestJS", "TypeScript", "TypeORM", "MySQL", "Redis", "Docker", "GitHub Actions"],
+      tags: ["NestJS", "TypeScript", "TypeORM", "MySQL", "Redis", "Docker", "GitHub Actions", "NCP VPC"],
       links: {
         github: "https://github.com/boostcampwm2025/web23-Synapse"
       },
@@ -72,7 +74,7 @@ export const portfolioData = {
           title: "LLM 비결정성을 서버 정책으로 제어한 AI 면접 흐름 안정화",
           situation: "AI 면접관이 질문을 중복 생성하거나 종료 조건을 무시하는 등 LLM의 비결정성으로 인해 면접 흐름이 깨지는 문제가 있었습니다.",
           target: "사용자 경험 및 안정성",
-          reason: "LLM 응답은 확률적 특성을 가지므로, 단순 프롬프트만으로는 서비스의 핵심 비즈니스 로직(종료 시점, 중복 방지)을 완벽히 보장하기 어려웠습니다.",
+          reason: "LLM 응답은 확률적 특성을 가지므로, 단순 프롬프트만으로는 서비스의 핵심 비즈니스 로직(종료 시점, 중복 방지)을 안정적으로 보장하기 어려웠습니다.",
           process: "LLM의 응답을 그대로 신뢰하지 않고 서버 주도의 제어 구조를 구현했습니다. TTL, 최대 턴 수, 전체 이력 기반 중복 감지 로직을 추가하고, 조건 도달 시 서버가 `isLast: true`를 강제하는 종료 결정 엔진을 구축했습니다. 또한 JSON Schema를 적용해 응답 형식을 강제했습니다.",
           role: "Author",
           result: "면접이 무한히 이어지거나 중복 질문으로 흐름이 깨지는 문제를 방지하여, AI의 자유도를 유지하면서도 서비스 안정성을 확보했습니다."
@@ -93,7 +95,7 @@ export const portfolioData = {
           reason: "ORM의 `remove()`는 엔티티를 메모리에 로드한 뒤 라이프사이클을 거치므로 일괄 삭제 시 부하가 크고, 수동 삭제는 실수로 인한 누락 위험이 있었습니다.",
           process: "TypeORM 관계 설정에서 DB 레벨 `onDelete: CASCADE`를 적용하여 원자적 삭제를 보장했습니다. 일괄 삭제 시에는 `delete()`를 활용해 불필요한 엔티티 로딩을 배제하고, 요청 수와 실제 삭제 수를 응답 DTO로 반환하여 정합성을 확인하도록 했습니다.",
           role: "Author",
-          result: "데이터 무결성을 DB 계층에서 보장함과 동시에 삭제 성능을 최적화하였으며, 클라이언트에게 명확한 처리 결과를 제공하게 되었습니다."
+          result: "데이터 무결성을 DB 계층에서 보장하고, 삭제 정책을 애플리케이션과 DB 계층의 책임에 맞게 정리해 클라이언트에 명확한 처리 결과를 제공했습니다."
         },
         {
           title: "운영 DB 안전성을 위해 synchronize 의존에서 Migration 기반 전환",
@@ -111,7 +113,7 @@ export const portfolioData = {
           reason: "코드 변경이 기존 모듈(인터뷰, 서류 관리 등)에 미치는 영향을 즉각적으로 파악할 수 있는 자동화된 검증 체계가 부족했습니다.",
           process: "GitHub Actions에 MySQL 서비스 컨테이너를 연동하고 CI 단계를 Lint, Build, Unit, E2E Tests로 세분화했습니다. 특히 실제 AI API 호출을 포함한 최종 저지선 성격의 테스트를 구축하여 배포 전 실제 동작을 검증하도록 했습니다.",
           role: "Author",
-          result: "PR 단계에서 결함을 조기 발견하여 운영 환경 장애 유입을 차단했으며, 팀 내에서 안정적으로 코드를 변경할 수 있는 신뢰 환경을 조성했습니다."
+          result: "리뷰 단계에서 결함을 조기 발견할 수 있도록 자동 검증 체계를 보강했으며, 팀 내에서 안정적으로 코드를 변경할 수 있는 신뢰 환경을 조성했습니다."
         },
         {
           title: "제한된 서버 환경을 고려한 Docker 배포 및 빌드 최적화",
@@ -121,20 +123,31 @@ export const portfolioData = {
           process: "멀티 스테이지 빌드와 `.dockerignore` 최적화를 적용했습니다. 빌드 결과물을 1.2GB에서 250MB로 경량화하였고, VPC와 Private DB 보안 설정을 고려한 Production용 Docker Compose 및 배포 워크플로우를 구성했습니다.",
           role: "Author",
           result: "이미지 크기를 약 80% 절감하여 배포 효율을 극대화했으며, 운영 환경 분리를 통해 보안성과 인프라 관리의 용이성을 확보했습니다."
+        },
+        {
+          title: "공개 애플리케이션 서버와 사설 DB 서버를 분리한 NCP VPC 구성",
+          situation: "애플리케이션 서버와 MySQL을 같은 공개 영역에 두면 DB가 외부에 노출될 위험이 있고, 사설 서버로 분리하면 SSH·MySQL 연결 경로를 별도로 설계해야 했습니다.",
+          target: "네트워크 보안 및 배포 안정성",
+          reason: "운영자 접속 지점과 애플리케이션의 DB 접근 지점을 분리하고, Private DB에 필요한 접근만 허용하는 구조가 필요했습니다.",
+          process: "NCP VPC 안에서 Public Subnet의 Bastion/Application 서버와 Private Subnet의 MySQL 서버를 분리했습니다. ACG에서 SSH와 MySQL 포트의 허용 범위를 제한하고, 연결 장애가 발생하면 라우팅·SSH 서비스·MySQL bind-address·계정 host 권한·DB_HOST 설정을 순서대로 확인했습니다.",
+          role: "Author",
+          result: "MySQL을 공인 IP 없이 운영하고, 운영자 SSH와 애플리케이션의 DB 연결 경로를 분리해 네트워크 접근 범위를 명확히 했습니다."
         }
       ]
     },
     {
       id: "smiletogether",
       type: "Main Project",
-      date: "2024.07 - 2024.08",
+      date: "2025.01 ~ 2025.03",
       title: "SmileTogether - MSA 기반 협업 도구",
       description: "Slack형 협업 메신저 서비스에서 채팅·히스토리·멤버·알림 서버의 백엔드 구현과 서버 간 연동을 담당했습니다.",
       points: [
-        "WebSocket/STOMP 기반 채팅 서버에서 메시지를 Kafka로 produce/consume하는 구조를 구현해 다중 채팅 서버 간 메시지 전파가 가능한 실시간 채팅 기반 마련",
+        "핵심 개발 인원 4명 규모의 프로젝트에서 팀장·백엔드 주담당으로 WebSocket/STOMP 기반 채팅 서버와 Kafka 메시지 전파 구조 구현",
         "Kafka를 활용한 메시지 히스토리 서버를 구현하고 MongoDB Document, Repository, Consumer, 조회 API를 작성해 채팅 메시지 저장/조회 책임을 별도 서버로 분리",
-        "Kafka 비동기 저장 구조에서 메시지 조회 시점의 누락 가능성을 발견하고, partition offset lag을 확인해 최대 5회·100ms 간격으로 polling 후 DB 조회하는 방식으로 메시지 정합성 보강",
+        "Kafka 비동기 저장 구조에서 직후 조회 누락 가능성을 발견하고, partition offset lag을 확인해 최대 5회·100ms 간격으로 polling 후 DB 조회하는 방식으로 조회 경험을 보강",
         "채팅/히스토리 서버에서 고정된 프로필 값을 사용하던 문제를 제거하고, 서버 간 HTTP 통신과 JWT Extractor를 구현해 Space 서버로부터 실제 프로필 정보를 받아 DTO에 반영하도록 개선",
+        "History 조회 중 같은 발신자의 프로필을 메시지마다 다시 요청하던 문제를 senderId별 요청 범위 캐시로 개선해 외부 호출을 400회에서 80회로 80% 감소시키고, 예비 측정에서 p95를 92.46ms에서 65.33ms로 29.34% 개선",
+        "k6·Node.js·Docker Compose 기반 Smoke/부하 테스트와 Chat·History 테스트를 통과하고 Prometheus에서 두 서버 target 수집을 확인했으며, Firebase 자격 증명이 필요한 Notification Server는 검증 범위에서 분리",
         "Kafka 기반 알림 서버 MVP를 구현해 채팅 메시지를 consume한 뒤 FCM Web Push로 전송하는 구조를 만들고, FCM 구독 정보 저장 API와 푸시 전송 로직 구성",
         "MSA 로컬 테스트 복잡도를 해결하기 위해 chat/history 서버 단독 및 통합 Docker Compose 환경을 분리하고, CORS·컨테이너명 기반 통신·Mongo/Kafka 환경 분리 문제를 보완"
       ],
@@ -166,9 +179,18 @@ export const portfolioData = {
           situation: "사용자가 메시지를 보낸 직후 히스토리를 조회하면, 아직 consume되지 않은 메시지가 누락되어 사용자 화면에 안 보이는 문제가 발생할 수 있었습니다.",
           target: "데이터 정합성, 안정성, 사용자 경험",
           reason: "Kafka 기반 비동기 저장 구조에서는 producer가 메시지를 보낸 시점과 consumer가 DB에 저장한 시점 사이에 지연이 존재했습니다.",
-          process: "KafkaLagChecker를 구현해 채널에 해당하는 파티션의 latest offset과 committed offset을 비교하도록 했습니다. lag이 존재하면 최대 5회, 100ms 간격으로 polling하여 consume 완료 여부를 확인한 뒤 DB에서 메시지를 조회하도록 개선했습니다.",
+          process: "KafkaLagChecker를 구현해 채널에 해당하는 파티션의 latest offset과 committed offset을 비교했습니다. lag이 존재하면 최대 5회, 100ms 간격으로 확인해 비동기 저장 지연으로 인한 직후 조회 누락 가능성을 낮췄습니다. 특정 메시지의 저장 완료 보장으로 확대하지 않았습니다.",
           role: "Author",
           result: "메시지 누락 가능성을 줄이는 정합성 확인 흐름을 추가하여 조회 시점의 데이터 정합성을 보장했습니다."
+        },
+        {
+          title: "History 프로필 중복 호출을 요청 범위 캐시로 제한",
+          situation: "History 조회가 메시지마다 Space Server 프로필을 요청해 같은 발신자의 메시지가 반복될수록 외부 호출과 지연이 함께 증가했습니다.",
+          target: "성능, 외부 의존성 부하, 응답 안정성",
+          reason: "한 요청 안에서는 같은 senderId의 프로필 결과를 재사용할 수 있었고, 실패한 조회도 반복할 이유가 없었습니다.",
+          process: "메시지를 응답 DTO로 변환하는 동안 senderId별 WorkspaceProfileDto를 지역 Map에 저장했습니다. 성공 결과뿐 아니라 null 결과도 containsKey로 캐시 여부를 판단해 동일 요청 안의 중복·실패 재호출을 막았습니다.",
+          role: "Author",
+          result: "동일 Docker·데이터·Smoke 조건의 예비 1회 비교에서 외부 프로필 호출을 400회에서 80회로 80% 줄이고 History p95를 92.46ms에서 65.33ms로 29.34% 개선했습니다. Space Server fallback 경로이므로 공식 기준선이 아닌 예비 측정으로 기록했습니다."
         },
         {
           title: "MSA 서버 간 통신을 위한 프로필 조회 API와 JWT Extractor 구현",
@@ -202,13 +224,14 @@ export const portfolioData = {
     {
       id: "facefriend",
       type: "Main Project",
-      date: "2024.03 - 2024.06",
-      title: "FaceFriend - 지능형 이미지 분석 커뮤니티",
+      date: "2024.03 ~ 2024.06",
+      title: "FaceFriend - AI 이미지 분석 기반 데이팅 커뮤니티",
       description: "Spring Boot 기반 소셜/채팅 서비스에서 WebSocket/STOMP 채팅 기능과 채팅 응답 구조 개선을 담당했습니다.",
       points: [
-        "실시간 채팅 기능이 필요한 상황에서 ChatRoom, ChatRoomMember, ChatMessage 도메인과 Controller-Service-Repository 계층을 구성하고, WebSocket/STOMP 및 RedisSubscriber 기반 채팅 API 구현",
-        "채팅방 입장 상태와 애플리케이션 접속 상태를 Redis domain으로 관리하고, 메시지 기록을 페이지네이션 및 특정 시간 이전 조회 방식으로 개선해 채팅 이력 조회 흐름 보강",
-        "STOMP 예외가 HTTP 예외 흐름으로만 처리되어 프론트엔드가 Socket 메시지로 오류를 받지 못하는 문제를 발견하고, 예외 메시지를 WebSocket으로 전달한 뒤 서버에서도 exception을 유지하도록 개선",
+        "6명(AI 2명, 프론트엔드 2명, 백엔드 2명) 프로젝트에서 ChatRoom, ChatRoomMember, ChatMessage 도메인과 Controller-Service-Repository 계층을 구성하고, WebSocket/STOMP 및 RedisSubscriber 기반 채팅 API 구현",
+        "DB 메시지와 Redis 소켓·채팅방 상태를 분리하고, 접속 중인 사용자는 STOMP로 즉시 전달하며 미접속 메시지는 Redis List에 보관 후 connectChat으로 재전달하는 흐름 구현",
+        "정상 disconnect/reconnect 조건의 접속 상태 기반 전달 경로를 구현하고, 온라인은 STOMP 즉시 전달·오프라인은 Redis List 보관 후 connectChat으로 재전달",
+        "STOMP 예외가 HTTP 예외 흐름으로만 처리되어 프론트엔드가 Socket 메시지로 오류를 받지 못하는 문제를 발견하고, 백엔드 오류 payload를 WebSocket 이벤트로 전달하도록 개선",
         "WebSocket 응답을 JSON 형태로 표준화하고 모든 STOMP 응답에 method 필드를 추가해 프론트엔드가 채팅 이벤트들을 구분할 수 있도록 응답 구조 개선",
         "친밀도 기반 이미지 변화 기능이 채팅방 목록 응답에 반영되도록 ChatRoomService와 상태별 채팅방 DTO를 수정하고, ChatAop 파싱 오류 및 이미지 마스크 레벨 기준 변경 대응",
         "채팅 기능 확장 과정에서 남은 불필요 API 및 서비스 코드를 제거하고 leftroom 로직을 수정해 채팅 도메인의 유지보수성 개선"
@@ -225,7 +248,7 @@ export const portfolioData = {
           reason: "단순 HTTP API만으로는 실시간 메시지 전달과 채팅 상태 반영이 어려웠습니다.",
           process: "WebSocket/STOMP 기반 채팅 API를 구현하고, ChatRoom, ChatRoomMember, ChatMessage 도메인과 계층 구조를 설계했습니다. STOMP 메시지 처리를 위해 Redis 설정과 RedisSubscriber를 추가하고 후속 리뷰에 맞춰 브로커와 DTO 구조를 리팩토링했습니다.",
           role: "Author",
-          result: "실시간 채팅 기능 기반을 완벽하게 구현하고 도메인과 서비스 계층을 구성했습니다."
+          result: "실시간 채팅 기능의 기반을 구현하고 도메인과 서비스 계층을 구성했습니다."
         },
         {
           title: "채팅방 입장 상태와 메시지 기록 페이지네이션 관리",
@@ -237,13 +260,22 @@ export const portfolioData = {
           result: "실시간 채팅뿐 아니라 채팅방 입장 상태 관리와 효율적인 채팅 이력 조회 흐름을 함께 보강했습니다."
         },
         {
+          title: "접속 상태 기반 미수신 메시지 보관과 재접속 복구",
+          situation: "정상적인 disconnect/reconnect 이벤트가 도달하는 조건에서 온라인·오프라인 메시지 전달 경로를 분리해야 했습니다.",
+          target: "접속 상태 기반 전달, 재접속 재전달, 현재성 관리",
+          reason: "접속 상태에 따라 온라인 즉시 전달과 오프라인 보관 경로를 구분해야 했습니다. 비정상 종료·heartbeat·ACK 전 장애는 구현 범위에서 제외했습니다.",
+          process: "앱의 접속 상태를 Redis에서 관리했습니다. 온라인 사용자는 STOMP로 즉시 전달하고, 오프라인 메시지는 Redis List에 보관한 뒤 정상 재접속 시 connectChat으로 재전달했습니다. 프론트는 receiveChat과 connectChat을 동일한 채팅 데이터 추가 경로로 처리했습니다.",
+          role: "Author",
+          result: "정상적인 재접속 흐름에서 앱의 온라인·오프라인 상태를 중심으로 메시지 전달 책임을 분리했습니다."
+        },
+        {
           title: "STOMP 예외를 프론트엔드가 받을 수 있도록 WebSocket 응답 흐름 개선",
           situation: "STOMP 통신 중 예외가 발생하면 서버에서는 확인이 가능하나, 프론트엔드는 WebSocket 메시지로 오류 정보를 받지 못했습니다.",
           target: "안정성, 사용자 경험, 디버깅/개발 생산성",
           reason: "일반적인 예외 처리는 HTTP 응답으로 처리되기 때문에 STOMP 클라이언트가 오류를 즉시 전달받기 어려웠습니다.",
-          process: "예외 발생 시 프론트로 오류 메시지를 먼저 STOMP로 전송하고, 이후 서버에서도 확인할 수 있도록 exception을 유지하는 방식으로 MessageService를 리팩토링했습니다.",
+          process: "예외 발생 시 백엔드가 오류 payload를 STOMP로 전송하고, 프론트엔드는 해당 이벤트를 구독해 실패 상태를 즉시 반영하도록 MessageService 응답 흐름을 리팩토링했습니다.",
           role: "Author",
-          result: "채팅 중 실패 상황을 프론트가 즉시 인지할 수 있게 하고, 서버 디버깅 흐름도 함께 보존했습니다."
+          result: "백엔드 예외를 프론트엔드가 실시간 이벤트로 인지하고 처리할 수 있는 통신 계약을 만들었습니다."
         },
         {
           title: "WebSocket 응답을 JSON 형태와 method 필드 기반으로 표준화",
@@ -329,10 +361,10 @@ export const portfolioData = {
         },
         {
           title: "코드 리뷰를 통한 협업 및 품질 관리 참여",
-          situation: "해커톤의 촉박한 일정 속에서 다수의 PR이 발생하며 코드의 일관성과 안정성이 저하될 우려가 있었습니다.",
+          situation: "해커톤의 촉박한 일정 속에서 여러 변경 사항이 동시에 진행되며 코드의 일관성과 안정성이 저하될 우려가 있었습니다.",
           target: "협업 및 유지보수성",
           reason: "빠른 기능 구현에만 집중할 경우, 공통 인증 처리나 API 명세의 파편화가 발생하기 쉬운 환경이었습니다.",
-          process: "전체 29개의 PR 중 20회 이상 리뷰어로 참여하여 API 명세 및 백엔드 흐름을 검토했습니다. 특히 인증 사용자 처리 방식과 계층 간 책임 분리에 대한 피드백을 주고받으며 코드 품질을 상호 보완했습니다.",
+          process: "API 명세 및 백엔드 흐름에 대한 코드 리뷰에 꾸준히 참여했습니다. 특히 인증 사용자 처리 방식과 계층 간 책임 분리에 대한 피드백을 주고받으며 코드 품질을 상호 보완했습니다.",
           role: "Reviewer / Author",
           result: "팀 내 기술적 의사결정 과정에 기여하며 개발 기간 내에 안정적인 백엔드 시스템을 완수하고, 유지보수가 용이한 협업 문화를 실천했습니다."
         }
@@ -341,7 +373,7 @@ export const portfolioData = {
     {
       id: "relanz",
       type: "Django Project",
-      date: "2023.06 - 2023.07",
+      date: "2023.06 ~ 2023.07",
       title: "Relanz - 스트레스 관리 및 챌린지 플랫폼",
       description: "사용자의 스트레스 설문 결과를 분석하여 맞춤형 리포트와 콘텐츠를 제공하고, 습관 개선을 위한 챌린지 참여를 지원하는 Django 기반 웹 서비스입니다.",
       points: [
@@ -444,13 +476,13 @@ export const portfolioData = {
       id: "opensource_contribution",
       title: "오픈소스 기여 활동 | 오픈소스 기여 모임 10기",
       date: "2026.01 - 2026.02",
-      description: "오픈소스 기여 모임 10기에 참여하여 실제 오픈소스 프로젝트의 협업 방식과 기여 프로세스를 경험하고, Spring Session 공식 문서 업데이트 PR을 제출했습니다.",
+      description: "오픈소스 기여 모임 10기에 참여하여 실제 오픈소스 프로젝트의 협업 방식과 기여 프로세스를 경험하고, Spring Session 공식 문서 업데이트를 제안했습니다.",
       details: [
-        "GitHub 기반 오픈소스 협업 프로세스 및 PR(Pull Request) workflow 경험",
+        "GitHub 기반 오픈소스 협업 프로세스와 코드 리뷰 흐름 경험",
         "AI 기반 개발 도구(ChatGPT, GitHub Copilot 등)를 활용한 코드 분석 및 이슈 해결 시도",
-        "실제 OSS 프로젝트 코드 리딩 및 기능 개선 PR 제출 경험",
+        "실제 OSS 프로젝트 코드 리딩 및 문서 개선 제안 경험",
         "코드 리뷰 피드백 기반 수정 및 협업 커뮤니케이션 경험",
-        "[Spring Session 공식 문서 내 MongoDB, Hazelcast 익스텐션 정보 업데이트(PR 기여)](https://github.com/spring-projects/spring-session/pull/3630)",
+        "Spring Session 공식 문서 내 MongoDB, Hazelcast 익스텐션 정보 업데이트 제안",
         "공식 이슈(gh-3604)를 연관하여 오픈소스 문서 정확성 개선 참여"
       ],
       story: `
@@ -458,11 +490,11 @@ export const portfolioData = {
         <br>
         <p>오픈소스 기여 모임 활동을 통해 실제 오픈소스 프로젝트의 협업 방식과 기여 프로세스를 경험했습니다. 단순 코드 작성보다 프로젝트 구조를 이해하고, 기존 코드 스타일 및 유지보수 방향에 맞춰 개선점을 찾는 과정에 집중했습니다.</p>
         <br>
-        <p>특히 GitHub 기반 협업 환경에서 이슈 탐색, 로컬 개발 환경 세팅, 코드 리딩, 브랜치 전략, Pull Request 작성 및 리뷰 대응 과정을 직접 경험했습니다.</p>
+        <p>특히 GitHub 기반 협업 환경에서 이슈 탐색, 로컬 개발 환경 세팅, 코드 리딩, 브랜치 전략, 변경 제안 작성 및 리뷰 대응 과정을 직접 경험했습니다.</p>
         <br>
         <p>또한 ChatGPT, GitHub Copilot 등의 AI 기반 개발 도구를 활용하여 코드베이스 구조를 빠르게 파악하고, 관련 문서 및 에러 원인을 분석하며 문제 해결 방향을 도출했습니다. 이를 통해 단순 구현뿐 아니라 AI를 활용한 개발 생산성 향상 경험도 함께 쌓을 수 있었습니다.</p>
         <br>
-        <p>프로젝트 기여 과정에서는 기능 개선 및 수정 사항에 대한 PR(Pull Request)을 제출하였고, Maintainer의 리뷰 피드백을 반영하며 협업 커뮤니케이션 경험을 쌓았습니다.</p>
+        <p>프로젝트 기여 과정에서는 기능 개선 및 문서 수정 사항을 제안했고, Maintainer의 리뷰 피드백을 반영하며 협업 커뮤니케이션 경험을 쌓았습니다.</p>
         <br>
       `
     },
@@ -476,7 +508,7 @@ export const portfolioData = {
         "문자열 덧셈 계산기: 파싱, 검증, 계산 책임을 개별 객체로 분리하여 입력 처리 흐름 명확화",
         "자동차 경주: 랜덤 숫자 생성 로직을 전략 패턴(IntGeneratorStrategy)으로 분리하여 테스트 가능한 구조로 개선",
         "로또 미션: 도메인 객체(Issuer, Checker, Analyst 등)를 세분화하여 비즈니스 로직 분산 방지",
-        "1~3주차 과제 PR 리뷰 참여 (reviewer 32회, commenter 59회)로 DTO, MVC 역할, 인터페이스 추상화 관련 토론 경험",
+        "1~3주차 과제 코드 리뷰 참여로 DTO, MVC 역할, 인터페이스 추상화 관련 토론 경험",
         "4주차 과제 private 진행 및 미션 수행"
       ],
       story: `
